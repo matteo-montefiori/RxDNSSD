@@ -29,7 +29,7 @@ public class DNSSDEmbeddedTest {
     @Before
     public void setup() {
         Context context = mock(Context.class);
-        mDNSSDEmbedded = new DNSSDEmbedded(context, TIMEOUT);
+        mDNSSDEmbedded = new DNSSDEmbedded(context);
         mockStatic(DNSSDEmbedded.class);
     }
 

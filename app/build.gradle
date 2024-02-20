@@ -1,12 +1,12 @@
 apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
 
 android {
-    compileSdkVersion 31
+    compileSdk 34
 
     defaultConfig {
         applicationId "com.github.druk.rxdnssd"
-        minSdkVersion 16
-        targetSdkVersion 31
+        minSdk 24
         versionCode 1
         versionName "1.0"
     }
@@ -17,24 +17,29 @@ android {
         }
     }
 
-    lintOptions {
-        abortOnError false
-    }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = '17'
     }
 
     ndkVersion "23.1.7779620"
+    namespace 'com.github.druk.dnssdsamples'
+    lint {
+        abortOnError false
+    }
 }
 
 dependencies {
     implementation project(':rx2dnssd')
+    implementation project(':rx3dnssd')
 
-    implementation 'androidx.appcompat:appcompat:1.4.0'
-    implementation 'com.google.android.material:material:1.4.0'
-    implementation 'androidx.constraintlayout:constraintlayout:2.1.2'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.11.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
 
     testImplementation 'junit:junit:4.13.2'
 }
