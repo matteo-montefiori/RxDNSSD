@@ -13,21 +13,20 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.github.druk.rx2dnssd.BonjourService;
-import com.github.druk.rx2dnssd.Rx2Dnssd;
-import com.github.druk.rx2dnssd.Rx2DnssdEmbedded;
+import com.github.druk.rx3dnssd.BonjourService;
+import com.github.druk.rx3dnssd.Rx3Dnssd;
+import com.github.druk.rx3dnssd.Rx3DnssdEmbedded;
 
 import java.util.Objects;
 import java.util.Set;
 
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.schedulers.Schedulers;
-
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.disposables.Disposable;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity {
 
-    private Rx2Dnssd rxDnssd;
+    private Rx3Dnssd rxDnssd;
 
     @Nullable
     private Disposable browseDisposable;
@@ -41,7 +40,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        rxDnssd = new Rx2DnssdEmbedded(this);
+        rxDnssd = new Rx3DnssdEmbedded(this);
 
         findViewById(R.id.check_threads).setOnClickListener(v -> {
             /*
@@ -114,13 +113,11 @@ public class MainActivity extends AppCompatActivity {
 
     private void startBrowse() {
         Log.i("TAG", "start browse");
-        browseDisposable = rxDnssd.browse("_rxdnssd._tcp", "local.")
-                .compose(rxDnssd.resolve())
-                .compose(rxDnssd.queryIPRecords())
+        browseDisposable = NsdManager.INSTANCE.discoverDnsSdServices(getBaseContext())
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(bonjourService -> {
-                    Log.d("TAG", bonjourService.toString());
+                .subscribe(bonjourService ->
+                {
                     if (bonjourService.isLost()) {
                         mServiceAdapter.remove(bonjourService);
                     } else {
@@ -133,6 +130,7 @@ public class MainActivity extends AppCompatActivity {
         Log.d("TAG", "Stop browsing");
         if (browseDisposable != null) {
             browseDisposable.dispose();
+            NsdManager.INSTANCE.clear();
         }
         browseDisposable = null;
     }
@@ -141,18 +139,15 @@ public class MainActivity extends AppCompatActivity {
         Log.i("TAG", "register");
         button.setEnabled(false);
         BonjourService bs = new BonjourService.Builder(0, 0, Build.DEVICE, "_rxdnssd._tcp", null).port(123).build();
-        registerDisposable = rxDnssd.register(bs)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(bonjourService -> {
-                    Log.i("TAG", "Register successfully " + bonjourService.toString());
-                    button.setEnabled(true);
-                    button.setText(R.string.unregister);
-                    Toast.makeText(MainActivity.this, "Rgstrd " + Build.DEVICE, Toast.LENGTH_SHORT).show();
-                }, throwable -> {
-                    Log.e("TAG", "error", throwable);
-                    button.setEnabled(true);
-                });
+        registerDisposable = rxDnssd.register(bs).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).subscribe(bonjourService -> {
+            Log.i("TAG", "Register successfully " + bonjourService.toString());
+            button.setEnabled(true);
+            button.setText(R.string.unregister);
+            Toast.makeText(MainActivity.this, "Rgstrd " + Build.DEVICE, Toast.LENGTH_SHORT).show();
+        }, throwable -> {
+            Log.e("TAG", "error", throwable);
+            button.setEnabled(true);
+        });
     }
 
     private void unregister(final Button button) {
@@ -167,6 +162,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        NsdManager.INSTANCE.clear();
         if (browseDisposable != null) {
             browseDisposable.dispose();
         }

@@ -24,7 +24,7 @@ import com.github.druk.dnssd.DNSSDService;
 import com.github.druk.dnssd.QueryListener;
 import com.github.druk.dnssd.RegisterListener;
 import com.github.druk.dnssd.ResolveListener;
-import com.github.druk.rx2dnssd.BonjourService;
+import com.github.druk.rx3dnssd.BonjourService;
 
 import java.net.Inet4Address;
 import java.net.Inet6Address;

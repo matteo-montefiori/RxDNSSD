@@ -17,31 +17,24 @@
 package com.github.druk.dnssd;
 
 import android.content.Context;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
+
+import java.util.concurrent.Semaphore;
 
 /**
  * RxDnssd is implementation of RxDnssd with embedded DNS-SD  {@link InternalDNSSD}
  */
 public class DNSSDEmbedded extends DNSSD {
 
-    public static final int DEFAULT_STOP_TIMER_DELAY = 5000; //5 sec
-
     private static final String TAG = "DNSSDEmbedded";
-    private final long mStopTimerDelay;
-    private final Handler handler = new Handler(Looper.getMainLooper());
     private Thread mThread;
     private volatile boolean isStarted = false;
     private int serviceCount = 0;
 
-    public DNSSDEmbedded(Context context) {
-        this(context, DEFAULT_STOP_TIMER_DELAY);
-    }
+    private final Semaphore semaphore = new Semaphore(1);
 
-    public DNSSDEmbedded(Context context, long stopTimerDelay) {
+    public DNSSDEmbedded(Context context) {
         super(context, "jdns_sd_embedded");
-        mStopTimerDelay = stopTimerDelay;
     }
 
     static native int nativeInit();
@@ -57,11 +50,19 @@ public class DNSSDEmbedded extends DNSSD {
      * Note: This method will block thread until DNS-SD initialization finish.
      */
     public void init() {
-        handler.removeCallbacks(DNSSDEmbedded::nativeExit);
+        try {
+            semaphore.acquire();
+            Log.i(TAG, "semaphore init acquired");
 
-        if (mThread != null && mThread.isAlive()) {
-            Log.i(TAG, "already started");
-            waitUntilStarted();
+            if (isStarted && mThread != null && mThread.isAlive()) {
+                serviceCount++;
+                Log.i(TAG, "thread already started, releasing it");
+                semaphore.release();
+                return;
+            }
+        } catch (Exception e) {
+            Log.i(TAG, "semaphore init exception: " + e);
+            semaphore.release();
             return;
         }
 
@@ -72,25 +73,26 @@ public class DNSSDEmbedded extends DNSSD {
             public void run() {
                 Log.i(TAG, "init");
                 int err = nativeInit();
-                synchronized (DNSSDEmbedded.class) {
-                    isStarted = true;
-                    DNSSDEmbedded.class.notifyAll();
-                }
                 if (err != 0) {
                     Log.e(TAG, "error: " + err);
+                    semaphore.release();
+                    Log.i(TAG, "semaphore run error released");
                     return;
                 }
-                Log.i(TAG, "start");
+                isStarted = true;
+                serviceCount++;
+                semaphore.release();
+                Log.i(TAG, "start - semaphore released");
                 int ret = nativeLoop();
                 isStarted = false;
+                serviceCount = 0;
                 Log.i(TAG, "finish with code: " + ret);
+                semaphore.release();
             }
         };
         mThread.setPriority(Thread.MAX_PRIORITY);
         mThread.setName("DNS-SDEmbedded");
         mThread.start();
-
-        waitUntilStarted();
     }
 
     /**
@@ -99,21 +101,24 @@ public class DNSSDEmbedded extends DNSSD {
      * Note: method isn't blocking, can be used from any thread.
      */
     public void exit() {
-        synchronized (DNSSDEmbedded.class) {
-            Log.i(TAG, "post exit");
-            handler.postDelayed(DNSSDEmbedded::nativeExit, mStopTimerDelay);
-        }
-    }
-
-    private void waitUntilStarted() {
-        synchronized (DNSSDEmbedded.class) {
-            while (!isStarted) {
-                try {
-                    DNSSDEmbedded.class.wait();
-                } catch (InterruptedException e) {
-                    Log.e(TAG, "waitUntilStarted exception: ", e);
+        try {
+            semaphore.acquire();
+            Log.i(TAG, "serviceCount exit, semaphore acquired " + serviceCount);
+            if (!isStarted) {
+                Log.i(TAG, "thread not started, releasing semaphore");
+                semaphore.release();
+            } else {
+                serviceCount--;
+                Log.i(TAG, "serviceCount exit " + serviceCount);
+                if (serviceCount > 0){
+                    semaphore.release();
+                } else {
+                    nativeExit();
                 }
             }
+        } catch (Exception e) {
+            // Log exception
+            Log.i(TAG, "exception in exit semaphore acquire " + e);
         }
     }
 
@@ -121,15 +126,11 @@ public class DNSSDEmbedded extends DNSSD {
     public void onServiceStarting() {
         super.onServiceStarting();
         this.init();
-        serviceCount++;
     }
 
     @Override
     public void onServiceStopped() {
         super.onServiceStopped();
-        serviceCount--;
-        if (serviceCount == 0) {
-            this.exit();
-        }
+        this.exit();
     }
 }
