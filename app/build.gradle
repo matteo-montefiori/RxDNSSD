@@ -6,7 +6,7 @@ android {
 
     defaultConfig {
         applicationId "com.github.druk.rxdnssd"
-        minSdk 24
+        minSdk 23
         versionCode 1
         versionName "1.0"
     }
