@@ -1,5 +1,8 @@
 apply plugin: 'com.android.library'
 
+def packageName = 'com.vodafone.dnssd'
+def packageVersion = '1.0.0'
+
 repositories {
     mavenCentral()
 }
@@ -34,7 +37,13 @@ android {
     }
 
     ndkVersion "26.2.11394342"
-    namespace 'com.github.druk.dnssd'
+    namespace 'com.vodafone.dnssd'
+
+    publishing {
+        singleVariant('release') {
+            withSourcesJar()
+        }
+    }
 }
 
 dependencies {
@@ -53,8 +62,9 @@ dependencies {
 
 ext {
     // Provide your own coordinates here
-    PUBLISH_GROUP_ID = 'com.github.andriydruk'
+    PUBLISH_GROUP_ID = 'com.vodafone'
     PUBLISH_ARTIFACT_ID = 'dnssd'
+    PUBLISH_VERSION = '1.0.0'
 }
 
 apply from: "${rootProject.projectDir}/publish-module.gradle"

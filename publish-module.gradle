@@ -1,5 +1,6 @@
 apply plugin: 'maven-publish'
 apply plugin: 'signing'
+apply plugin: 'com.jfrog.artifactory'
 
 task androidSourcesJar(type: Jar) {
     archiveClassifier.set('sources')
@@ -20,57 +21,44 @@ afterEvaluate {
     publishing {
         publications {
             release(MavenPublication) {
-                // The coordinates of the library, being set from variables that
-                // we'll set up later
-                groupId PUBLISH_GROUP_ID
-                artifactId PUBLISH_ARTIFACT_ID
-                version mavenCentralVersion
+                groupId = PUBLISH_GROUP_ID
+                artifactId = PUBLISH_ARTIFACT_ID
+                version = PUBLISH_VERSION
 
-                // Two artifacts, the `aar` (or `jar`) and the sources
-                if (project.plugins.findPlugin("com.android.library")) {
-                    from components.findByName('release')
-                } else {
-                    artifact("$buildDir/libs/${project.getName()}-${version}.jar")
-                }
-
-                artifact androidSourcesJar
-
-              // Mostly self-explanatory metadata
-              pom {
-                    name = PUBLISH_ARTIFACT_ID
-                    description = 'Android version of Apple DNSSD Java API'
-                    url = 'https://github.com/andriydruk/RxDNSSD'
-                    licenses {
-                        license {
-                            name = 'The Apache Software License, Version 2.0'
-                            url = 'https://github.com/andriydruk/RxDNSSD/blob/master/LICENSE'
-                        }
-                    }
-                    developers {
-                        developer {
-                          id = 'andriydruk'
-                          name = 'Andrew Druk'
-                          email = 'adriy.druk@gmail.com'
-                        }
-                    }
-
-                // Version control info - if you're using GitHub, follow the 
-                // format as seen here
-                scm {
-                        connection = 'scm:git:github.com/andriydruk/RxDNSSD.git'
-                        developerConnection = 'scm:git:ssh://github.com/andriydruk/RxDNSSD.git'
-                        url = 'https://github.com/andriydruk/RxDNSSD/tree/master'
-                    }
-                }
+                from components.release
             }
+        }
+        artifactoryPublish {
+            dependsOn('assembleRelease')
+            publications(publishing.publications.release)
         }
     }
 }
 
-ext["signing.keyId"] = rootProject.ext["signing.keyId"]
-ext["signing.password"] = rootProject.ext["signing.password"]
-ext["signing.secretKeyRingFile"] = rootProject.ext["signing.secretKeyRingFile"]
+artifactory {
+    contextUrl = "${System.env.JFROG_GHA_PUBLISH_REPO}"
+    resolve {
+        repository {
+            repoKey = 'maven-vfgroup-gh-dnssd-local'
+            username = "${System.env.JFROG_GHA_WRITE_USER}" // The publisher user name
+            password = "${System.env.JFROG_GHA_WRITE_PASS}" // The publisher password
+        }
+    }
+    publish {
+        repository {
+            repoKey = 'maven-vfgroup-gh-dnssd-local' // The Artifactory repository key to publish to
+            username = "${System.env.JFROG_GHA_WRITE_USER}" // The publisher user name
+            password = "${System.env.JFROG_GHA_WRITE_PASS}" // The publisher password
 
-signing {
-    sign publishing.publications
+        }
+        defaults {
+            // Reference to Gradle publications defined in the build script.
+            // This is how we tell the Artifactory Plugin which artifacts should be
+            // published to Artifactory.
+            publishBuildInfo = false
+            publishArtifacts = true
+            // Properties to be attached to the published artifacts.
+            publishPom = true // Publish generated POM files to Artifactory (true by default)
+        }
+    }
 }

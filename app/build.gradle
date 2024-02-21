@@ -1,11 +1,14 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
+def packageName = 'com.vodafone.dnssdsamples'
+def packageVersion = '1.0.0'
+
 android {
     compileSdk 34
 
     defaultConfig {
-        applicationId "com.github.druk.rxdnssd"
+        applicationId "com.vodafone.rxdnssd"
         minSdk 23
         versionCode 1
         versionName "1.0"
@@ -27,7 +30,7 @@ android {
     }
 
     ndkVersion "23.1.7779620"
-    namespace 'com.github.druk.dnssdsamples'
+    namespace 'com.vodafone.dnssdsamples'
     lint {
         abortOnError false
     }
