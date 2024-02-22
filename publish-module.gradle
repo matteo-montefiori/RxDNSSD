@@ -37,13 +37,6 @@ afterEvaluate {
 
 artifactory {
     contextUrl = "${System.env.JFROG_GHA_PUBLISH_REPO}"
-    resolve {
-        repository {
-            repoKey = 'maven-vfgroup-gh-dnssd-local'
-            username = "${System.env.JFROG_GHA_WRITE_USER}" // The publisher user name
-            password = "${System.env.JFROG_GHA_WRITE_PASS}" // The publisher password
-        }
-    }
     publish {
         repository {
             repoKey = 'maven-vfgroup-gha-local' // The Artifactory repository key to publish to
