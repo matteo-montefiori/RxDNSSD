@@ -7,11 +7,27 @@ buildscript {
         maven {
             url "https://plugins.gradle.org/m2/"
         }
+        mavenCentral()
+        // SecLib (Smapi) maven repo
+        maven {
+            url 'https://artifactory.vodafone.com/artifactory/maven-vfgroup-cps-smapi-local/'
+            credentials {
+                username "${System.env.JFROG_READ_USER}"
+                password "${System.env.JFROG_READ_PASS}"
+            }
+        }
+        // Huawei repo
+        maven { url 'https://developer.huawei.com/repo/' }
+        // hive mqtt - Android API levels below 24
+        gradlePluginPortal()
+        jcenter()
+        maven { url 'https://jitpack.io' }
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:8.2.2'
-        classpath 'io.github.gradle-nexus:publish-plugin:1.1.0'
+        //classpath 'io.github.gradle-nexus:publish-plugin:1.1.0'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath 'org.jfrog.buildinfo:build-info-extractor-gradle:5.1.12'
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
     }
@@ -21,6 +37,57 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+
+        // OnePlatform maven repo
+        maven {
+            url "${System.env.JFROG_ONEPLATFORM_REPO}"
+            credentials {
+                username "${System.env.JFROG_READ_USER}"
+                password "${System.env.JFROG_READ_PASS}"
+            }
+        }
+
+        // NFHS maven repo
+        maven {
+            url "${System.env.JFROG_NFHS_REPO}"
+            credentials {
+                username "${System.env.JFROG_READ_USER}"
+                password "${System.env.JFROG_READ_PASS}"
+            }
+        }
+
+        // GHA maven repo
+        maven {
+            url "${System.env.JFROG_GHA_REPO}"
+            credentials {
+                username = "${System.env.JFROG_READ_USER}" // The publisher user name
+                password = "${System.env.JFROG_READ_PASS}" // The publisher password
+            }
+        }
+
+        // SecLib (Smapi) maven repo
+        maven {
+            url 'https://artifactory.vodafone.com/artifactory/maven-vfgroup-cps-smapi-local/'
+            credentials {
+                username "${System.env.JFROG_READ_USER}"
+                password "${System.env.JFROG_READ_PASS}"
+            }
+        }
+
+        // Huawei maven repo
+        maven { url 'https://developer.huawei.com/repo/' }
+
+        maven {
+            url "${System.env.JFROG_NETPERFORM_REPO}"
+            credentials {
+                username "${System.env.JFROG_READ_USER}"
+                password "${System.env.JFROG_READ_PASS}"
+            }
+        }
+
+        gradlePluginPortal()
+        jcenter()
+        maven { url 'https://jitpack.io' }
     }
 }
 
@@ -39,6 +106,3 @@ subprojects {
 task clean(type: Delete) {
     delete rootProject.buildDir
 }
-
-apply plugin: 'io.github.gradle-nexus.publish-plugin'
-apply from: "${rootDir}/publish-root.gradle"
