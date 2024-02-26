@@ -60,7 +60,7 @@ ext {
     // Provide your own coordinates here
     PUBLISH_GROUP_ID = 'com.vodafone.dnssd'
     PUBLISH_ARTIFACT_ID = 'dnssd'
-    PUBLISH_VERSION = '1.0.1'
+    PUBLISH_VERSION = '1.0.2'
 }
 
 apply from: "${rootProject.projectDir}/publish-module.gradle"

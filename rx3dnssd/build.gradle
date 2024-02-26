@@ -49,7 +49,7 @@ dependencies {
 ext {
     PUBLISH_GROUP_ID = 'com.vodafone.dnssd'
     PUBLISH_ARTIFACT_ID = 'rx3dnssd'
-    PUBLISH_VERSION = '1.0.2'
+    PUBLISH_VERSION = '1.0.4'
 }
 
 apply from: "${rootProject.projectDir}/publish-module.gradle"
